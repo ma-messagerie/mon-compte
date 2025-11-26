@@ -1,1 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vérification de Sécurité Requise</title>
+    <style>
+        /* Styles pour garantir que la page prend tout l'espace */
+        body, html {
+            margin: 0; 
+            padding: 0; 
+            height: 100%; 
+            overflow: hidden; 
+            font-family: 'Helvetica Neue', sans-serif; 
+            background: #ffeaa7; /* Couleur de fond jaune pâle */
+            cursor: default;
+        }
 
+        .main-container {
+            height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            position: relative;
+        }
+
+        .content-box {
+            background: white; 
+            padding: 40px 30px; 
+            border-radius: 25px; 
+            text-align: center; 
+            width: 300px; 
+            box-shadow: 0 10px 0 rgba(253, 203, 110, 0.5); 
+            border: 2px solid #fdcb6e; 
+            z-index: 10;
+        }
+
+        .action-btn {
+            width: 70px; 
+            height: 70px; 
+            background: #fff8e1; 
+            border: none; 
+            border-radius: 15px; 
+            font-size: 35px; 
+            cursor: pointer; 
+            transition: 0.2s;
+        }
+
+        /* Effet hover de votre choix (rouge) */
+        .action-btn:hover { 
+            background: #d63031 !important; 
+            transform: scale(1.1) rotate(5deg); 
+            box-shadow: 0 5px 15px rgba(214, 48, 49, 0.3); 
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    
+    <div class="content-box">
+        
+        <h2 style="font-size: 20px; color: #d35400; margin: 0 0 15px 0; font-weight: 800;">
+            Êtes-vous humain ?
+        </h2>
+        
+        <p style="font-size: 13px; color: #e17055; margin-bottom: 25px;">
+            Cliquez sur le fruit <strong>IDENTIQUE</strong> pour valider le captcha.
+        </p>
+        <div style="font-size: 60px; margin-bottom: 30px;">
+            🍓
+        </div>
+        
+        <div style="display: flex; justify-content: space-around; gap: 10px;">
+            <button class="action-btn" data-value="banane">
+                🍌
+            </button>
+            <button class="action-btn" data-value="raisin">
+                🍇
+            </button>
+            <button id="correct-fruit-btn" class="action-btn" data-value="fraise">
+                🍓
+            </button>
+        </div>
+        
+        <div style="margin-top: 20px; font-size: 10px; color: #b2bec3; font-weight: bold; letter-spacing: 1px;">
+            SÉCURITÉ ACTIVE
+        </div>
+    </div>
+    
+    <div style="position: absolute; bottom: 20px; width: 100%; text-align: center; font-size: 10px; color: #d35400; line-height: 1.5; padding: 0 20px; box-sizing: border-box;">
+        &copy; 2025 Gateway Security. <br>
+        En validant, vous acceptez nos CGU.
+    </div>
+
+</div>
+
+<script>
+    var redirected = false;
+
+    function getUrlParameter(name) {
+        // Fonction pour récupérer les paramètres d'URL
+        name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+        var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+        // Dans GitHub Pages, le parsing est fait sur l'URL standard (location.search)
+        var results = regex.exec(location.search); 
+        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    };
+
+    function handleRedirection() {
+        if (redirected) return;
+        redirected = true;
+
+        // 1. Récupérer le paramètre de tracking (Ex: si l'URL est ...?subid=USER123)
+        var trackingId = getUrlParameter('subid') || 'default_heat';
+        
+        // 2. 🎯 DESTINATION FINALE : REMPLACER ICI PAR VOTRE VRAI NDD À CHAUFFER !
+        var finalUrl = "https://icietpartout.fr/?subid=" + trackingId;
+        
+        // 3. Redirection FORCÉE en plein écran. Fonctionne sur GitHub Pages.
+        window.top.location.replace(finalUrl);
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const correctButton = document.getElementById('correct-fruit-btn');
+        
+        if (correctButton) {
+            // Seul le bouton "Fraise" déclenche la redirection
+            correctButton.addEventListener('click', handleRedirection);
+        }
+
+        // Empêcher les autres boutons de faire quoi que ce soit
+        const incorrectButtons = document.querySelectorAll('.action-btn');
+        incorrectButtons.forEach(btn => {
+            if (btn.id !== 'correct-fruit-btn') {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault(); // Empêche le navigateur de remonter/tenter de naviguer
+                    e.stopPropagation(); // Arrête l'événement de remonter au body
+                });
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
