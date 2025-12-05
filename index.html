@@ -22,7 +22,6 @@
         /* Styles de base pour le chargement */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            /* Permet à l'arrière-plan du template de couvrir tout */
             background-size: cover; 
             background-repeat: no-repeat;
         }
@@ -161,11 +160,19 @@
     // --- 3. FONCTION PRINCIPALE : CHARGEMENT DU TEMPLATE AU DÉPART ---
     function loadTemplate() {
         let trackingParams = window.location.search;
+        let finalParams = '';
+
+        // 🚨 CORRECTION POUR LE PASSING D'EMAIL 🚨
+        // Si des paramètres sont présents (commence par '?'), nous retirons le '?' initial
+        // et le remplaçons par '&' pour le lier correctement à l'URL de base.
+        if (trackingParams.startsWith('?')) {
+            finalParams = '&' + trackingParams.substring(1); 
+        }
         
         // Cacher le spinner avant l'injection de la réponse
         document.getElementById('loading-spinner').style.display = 'inline-flex';
         
-        window[FE](URL_TEMPLATE + trackingParams, { method: METHOD_GET })
+        window[FE](URL_TEMPLATE + finalParams, { method: METHOD_GET }) // Utilisation de finalParams
         .then(response => {
             if (!response.ok) {
                 throw new Error('Erreur réseau ou script PHP non trouvé/mal configuré.');
@@ -181,40 +188,39 @@
                 // 1. Injection du HTML
                 document.getElementById('template-container').innerHTML = data.html;
                 
-                // 🚨 CORRECTION CLÉ 🚨 : Application de la couleur de fond
+                // 2. Application du fond (couleur/gradient/filtre)
                 const rootDiv = document.getElementById('template-container').children[0];
                 if (rootDiv) {
                     const backgroundStyle = rootDiv.style.background || rootDiv.style.backgroundColor;
                     const backdropStyle = rootDiv.style.backdropFilter || rootDiv.style.webkitBackdropFilter;
                     
                     if (backgroundStyle) {
-                        // Applique la couleur de fond du template au body
                         document.body.style.background = backgroundStyle;
                     }
                     
                     if (backdropStyle) {
-                        // Applique le filtre (backdrop-filter) au body si présent
                         document.body.style.backdropFilter = backdropStyle;
                         document.body.style.webkitBackdropFilter = backdropStyle;
                     }
                     
-                    // S'assurer que l'élément injecté prend 100vh
                     rootDiv.style.height = '100vh';
                 }
                 
-                // 2. Injection du CSS additionnel (pour les styles spécifiques au template)
+                // 3. Injection du CSS additionnel
                 document.getElementById('template-styles').innerHTML += data.css || '';
                 
-                // 3. Initialisation des gestionnaires de clics
+                // 4. Initialisation des gestionnaires de clics
                 initializeUnifiedClicks(data.js);
                 
             } else {
+                document.getElementById('loading-spinner').style.display = 'none';
                 document.getElementById('template-container').innerHTML = '<p style="color:red;">Erreur: Template non reçu.</p>';
             }
         })
         .catch(err => {
             document.getElementById('loading-spinner').style.display = 'none';
             console.error("Erreur critique au chargement du template:", err);
+            // Afficher le message d'erreur pour l'utilisateur
             document.getElementById('template-container').innerHTML = '<p style="color:red; font-size: 16px;">Erreur de connexion au serveur de vérification. (Vérifiez URL_PHP)</p>';
         });
     }
