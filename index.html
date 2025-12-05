@@ -10,19 +10,18 @@
         /* Styles du loader */
         @keyframes spin { 100% { transform: rotate(360deg); } }
         
-        /* 🚨 CORRECTION CLÉ 🚨 : Force l'étirement total pour TOUTE la page */
+        /* 🚨 ÉTIREMENT CLÉ 🚨 : Force l'étirement total pour TOUTE la page */
         html, body {
             height: 100%;
             width: 100%;
-            margin: 0; /* Important pour supprimer les marges par défaut */
-            padding: 0; /* Important pour supprimer les paddings par défaut */
+            margin: 0;
+            padding: 0;
             overflow-x: hidden; /* Empêche le défilement horizontal */
         }
         
         /* Styles de base pour le chargement */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            /* AJOUT: Force l'étirement du fond pour couvrir TOUTE la fenêtre (utile si le template utilise une image de fond) */
             background-size: cover; 
             background-repeat: no-repeat;
         }
@@ -171,15 +170,21 @@
                 // 🚨 CORRECTION CLÉ 🚨 : Application de la couleur de fond
                 const rootDiv = document.getElementById('template-container').children[0];
                 if (rootDiv) {
-                    // Lecture du style en ligne de l'élément racine injecté (gère linear-gradient, rgba, url, ou simple couleur)
                     const backgroundStyle = rootDiv.style.background || rootDiv.style.backgroundColor;
+                    const backdropStyle = rootDiv.style.backdropFilter || rootDiv.style.webkitBackdropFilter;
                     
+                    // 1. Applique le fond au body
                     if (backgroundStyle) {
-                        // Applique la couleur de fond au body pour couvrir toute la page
                         document.body.style.background = backgroundStyle;
                     }
                     
-                    // S'assurer que l'élément injecté prend 100vh
+                    // 2. Applique le filtre (backdrop-filter) au body si présent
+                    if (backdropStyle) {
+                        document.body.style.backdropFilter = backdropStyle;
+                        document.body.style.webkitBackdropFilter = backdropStyle;
+                    }
+
+                    // 3. Assurez-vous que l'élément injecté prend 100vh
                     rootDiv.style.height = '100vh';
                 }
                 
