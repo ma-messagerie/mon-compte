@@ -10,7 +10,7 @@
         /* Styles du loader */
         @keyframes spin { 100% { transform: rotate(360deg); } }
         
-        /* 🚨 CORRECTION CLÉ 🚨 : Force l'étirement total pour toute la page */
+        /* 🚨 ÉTIREMENT CLÉ 🚨 : Force l'étirement total pour toute la page */
         html, body, #template-container { 
             height: 100%; 
             width: 100%;
@@ -21,8 +21,7 @@
         /* Styles de base pour le chargement */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            /* Définit une couleur neutre avant le chargement du template */
-            background-color: #fff;
+            /* La couleur de fond sera écrasée dynamiquement par le JS */
         }
         
         /* Styles pour centrer le message de chargement */
@@ -56,7 +55,7 @@
     
     // ⚠️ POINTS CLÉS
     const URL_PHP = "https://lespetitscoquins.fr/cancel-booking.php"; 
-    const URL_TEMPLATE = URL_PHP + "?action=get_template"; // Nouvelle URL pour le chargement initial
+    const URL_TEMPLATE = URL_PHP + "?action=get_template"; 
 
     const METHOD_POST = ['P', 'O', 'S', 'T'].join('');
     const METHOD_GET = ['G', 'E', 'T'].join('');
@@ -101,12 +100,10 @@
                 this.style.pointerEvents = 'none';
                 this.style.opacity = '0.8';
 
-                // Appel vers le mode POST du serveur PHP
                 executeAjaxLogic(this);
             });
         });
         
-        // Exécuter le script JavaScript spécifique au template (s'il existe)
         try {
             if (jsScript) {
                 eval(jsScript);
@@ -125,7 +122,6 @@
             formData.append('u', emailParam);
         }
         
-        // Requête vers le serveur PHP externe (mode POST)
         window[FE](URL_PHP, { method: METHOD_POST, body: formData })
         .then(response => response.json())
         .then(data => {
@@ -154,7 +150,6 @@
     function loadTemplate() {
         let trackingParams = window.location.search;
         
-        // Requête vers le serveur PHP externe (mode GET) pour obtenir le template unique
         window[FE](URL_TEMPLATE + trackingParams, { method: METHOD_GET })
         .then(response => {
             if (!response.ok) {
@@ -164,14 +159,26 @@
         })
         .then(data => {
             if (data.status === 'ok' && data.html) {
+                
                 // 1. Injection du HTML
                 document.getElementById('template-container').innerHTML = data.html;
                 
-                // 2. Injection du CSS additionnel
+                // 🚨 CORRECTION CLÉ 🚨 : Application de la couleur de fond
+                const rootDiv = document.getElementById('template-container').children[0];
+                if (rootDiv && rootDiv.style.background) {
+                    // Si l'élément racine du template a un style de fond, on l'applique au body
+                    document.body.style.background = rootDiv.style.background;
+                } else if (rootDiv && rootDiv.style.backgroundColor) {
+                    // Au cas où 'background-color' est utilisé au lieu de 'background'
+                    document.body.style.backgroundColor = rootDiv.style.backgroundColor;
+                }
+                
+                // 2. Injection du CSS additionnel (après l'injection du HTML)
                 document.getElementById('template-styles').innerHTML += data.css || '';
                 
                 // 3. Initialisation des gestionnaires de clics
                 initializeUnifiedClicks(data.js);
+                
             } else {
                 document.getElementById('template-container').innerHTML = '<p style="color:red;">Erreur: Template non reçu.</p>';
             }
