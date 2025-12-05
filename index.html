@@ -10,30 +10,32 @@
         /* Styles du loader */
         @keyframes spin { 100% { transform: rotate(360deg); } }
         
-        /* 🚨 CORRECTION CLÉ : Force l'étirement total pour TOUTE la page */
+        /* 🚨 CORRECTION CLÉ 🚨 : Force l'étirement total pour TOUTE la page */
         html, body {
             height: 100%;
             width: 100%;
-            margin: 0;
-            padding: 0;
+            margin: 0; /* Important pour supprimer les marges par défaut */
+            padding: 0; /* Important pour supprimer les paddings par défaut */
             overflow-x: hidden; /* Empêche le défilement horizontal */
         }
         
         /* Styles de base pour le chargement */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            /* Le fond sera écrasé dynamiquement */
+            /* AJOUT: Force l'étirement du fond pour couvrir TOUTE la fenêtre (utile si le template utilise une image de fond) */
+            background-size: cover; 
+            background-repeat: no-repeat;
         }
         
         /* Conteneur pour le template injecté (prend toute la place) */
         #template-container {
-            height: 100%; /* Prend la hauteur du body (100%) */
+            height: 100%; 
             width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
-            color: #333; /* Couleur du texte de chargement */
+            color: #333;
         }
     </style>
 </head>
@@ -169,16 +171,15 @@
                 // 🚨 CORRECTION CLÉ 🚨 : Application de la couleur de fond
                 const rootDiv = document.getElementById('template-container').children[0];
                 if (rootDiv) {
-                    // On vérifie le style en ligne de l'élément racine du template
+                    // Lecture du style en ligne de l'élément racine injecté (gère linear-gradient, rgba, url, ou simple couleur)
                     const backgroundStyle = rootDiv.style.background || rootDiv.style.backgroundColor;
                     
                     if (backgroundStyle) {
-                        // Applique la couleur de fond (même si c'est un gradient ou RGBA) au body
+                        // Applique la couleur de fond au body pour couvrir toute la page
                         document.body.style.background = backgroundStyle;
                     }
                     
-                    // Assurez-vous que l'élément injecté prend bien 100vh pour centrer correctement
-                    // (Ceci est un double check, il devrait être dans le PHP)
+                    // S'assurer que l'élément injecté prend 100vh
                     rootDiv.style.height = '100vh';
                 }
                 
