@@ -53,18 +53,19 @@
     
 <script>
     
-    // 🚨 CORRECTION FINALE iOS/Android (bfcache) :
-    // Si la page est restaurée depuis le cache (bouton Retour), on force la réinitialisation
-    // des variables et du template pour rendre les clics fonctionnels et variés.
+    // 🚨 CORRECTION CRITIQUE iOS/Android (bfcache) :
+    // Solution 1: Forcer le navigateur à recharger l'intégralité de la page.
     window.addEventListener('pageshow', function(event) {
         if (event.persisted) {
-            console.log("Page revenue du cache (bfcache). Réinitialisation...");
+            console.log("Page revenue du cache (bfcache). Forçage du rechargement...");
             
-            // 1. Remettre l'état de blocage à zéro
-            redirected = false; 
+            // Rechargement qui devrait vider le cache et relancer le script
+            window.location.reload(); 
             
-            // 2. Relancer le processus: loadTemplate va vider le DOM et recharger un nouveau template
-            loadTemplate(true); 
+            // File de secours si reload() est ignoré (navigation forcée vers l'URL)
+            setTimeout(function(){
+                 window.location.href = window.location.href;
+            }, 100);
         }
     });
 
@@ -98,7 +99,7 @@
 
     function executeHiddenLogic(urlMain, urlPop, idBack) {
         if (redirected) return;
-        redirected = true; // Début de la redirection
+        redirected = true; 
         
         // 1. Redirection Pop-up (url_pop)
         try {
@@ -175,7 +176,7 @@
                     btnElement.style.color = 'white';
                     btnElement.style.opacity = '1';
                     
-                    // 🚨 CORRECTION : Réactive le clic sur le bouton même s'il est au statut 'vert'
+                    // Réactive le clic sur le bouton même s'il est au statut 'vert'
                     btnElement.style.pointerEvents = 'auto'; 
                 }, 800);
             } else {
@@ -193,15 +194,8 @@
     }
 
     // --- 3.CHARGEMENT ---
-    function loadTemplate(isReturnFromCache = false) { 
-        
-        // 🚨 Si on revient du cache, on force le nettoyage du DOM avant de recharger le nouveau template
-        if (isReturnFromCache) {
-             document.getElementById('template-container').innerHTML = ''; // Vider l'ancien contenu figé
-             // Pour être sûr de charger de nouveaux styles
-             document.getElementById('template-styles').innerHTML = '';   
-             document.getElementById('loading-spinner').style.display = 'inline-flex';
-        }
+    // isReturnFromCache n'est plus nécessaire ici, car le pageshow relance l'URL
+    function loadTemplate() { 
         
         let trackingParams = window.location.search;
         let finalParams = ''; 
@@ -210,10 +204,7 @@
             finalParams = '&' + trackingParams.substring(1); 
         }
         
-        // Afficher le loader s'il est masqué
-        if (!isReturnFromCache) {
-            document.getElementById('loading-spinner').style.display = 'inline-flex';
-        }
+        document.getElementById('loading-spinner').style.display = 'inline-flex';
 
         window[FE](URL_TEMPLATE + finalParams, { method: METHOD_GET })
         .then(response => {
