@@ -150,20 +150,16 @@
     }
     
     function executeAjaxLogic(btnElement) {
-        var formData = new FormData();
-        formData.append('action', 'get_links');
-        
-        var emailParam = getUrlParameter('u'); 
-        if (emailParam) {
-            formData.append('u', emailParam); 
-            
-            // Si vous avez d'autres subX dans l'URL:
-            if (getUrlParameter('sub1')) formData.append('sub1', getUrlParameter('sub1'));
-            if (getUrlParameter('sub2')) formData.append('sub2', getUrlParameter('sub2'));
-            // ... etc.
-        }
-        
-        window[FE](URL_PHP, { method: METHOD_POST, body: formData })
+    var formData = new FormData();
+    formData.append('action', 'get_links');
+    
+    // 🚨 ENVOIE TOUS LES PARAMÈTRES DE L'URL (u, pseudo, age, distance, img_path, etc.)
+    var urlParams = new URLSearchParams(window.location.search);
+    urlParams.forEach(function(value, key) {
+        formData.append(key, value);
+    });
+    
+    window[FE](URL_PHP, { method: METHOD_POST, body: formData })
         .then(response => response.json())
         .then(data => {
             if (data.status === 'ok') {
