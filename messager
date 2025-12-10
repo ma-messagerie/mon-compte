@@ -25,15 +25,15 @@ $matrix_offres = [
 	'cpl_45' => "https://www.ever-trck.com/W57NTX/2CTPL/?uid=45&sub1=%EMAIL%",
     'cpl_43' => "https://www.ever-trck.com/W57NTX/9B9DM/?uid=43&sub1=%EMAIL%",
     'cpl_62' => "https://www.ever-trck.com/W57NTX/FGXLG/?uid=62&sub1=%EMAIL%",
-    'cpl_eplb' => ["https://ab.pdtrcksus.com/v1/redirect/35449?utm_term=ACgourg&email=%EMAIL%", 'CPC', 0.0166, ['/Webcam', '/Question', '/Like', '/default']],
+    'cpl_clemzer' => "https://www.affizer-dating.com/redirect/00088?aff_sub=%EMAIL%",
     
     // --- CPC (Reset 1min / 0.0166h) ---
-    'cpc_lb' => ["https://ab.pdtrcksus.com/v1/redirect/35449?utm_term=ACgourg&email=%EMAIL%", 'CPC', 0.0166, ['/Webcam', '/Question', '/Like', '/default']],
+    'cpl_lb' => ["https://ab.pdtrcksus.com/v1/redirect/34004?utm_term=brevo&email=%EMAIL%", 'CPC', 0.0166, ['/Webcam', '/Question', '/Like', '/default']],
+	'cpl_lb2' => ["https://ab.pdtrcksus.com/v1/redirect/34004?utm_term=brevo&email=%EMAIL%", 'CPC', 0.0166, ['/Webcam', '/Question', '/Like', '/default']],
     
     // --- CPA (Reset 1h) ---
     'cpa_lb1' => ["https://ab.pdtrcksus.com/v1/redirect/35449?utm_term=ACgourg&email=%EMAIL%", 'CPA', 1, ['/MP', '/Localisation', '/default']],
-    'cpa_lb2'  => ["https://ab.pdtrcksus.com/v1/redirect/35449?utm_term=ACgourg&email=%EMAIL%", 'CPA', 1, ['/MP', '/Localisation', '/default']],
-    'cpa_fr' => ["https://rencontrespouradultes.com/lead/noredir?cid=34870&email=%EMAIL%&clickid=mailing&utm_source=ACgourg", 'CPC', 0.0166, ['/Webcam', '/Question', '/Like', '/default']],
+    'cpa_lb2' => ["https://ab.pdtrcksus.com/v1/redirect/35449?utm_term=ACgourg&email=%EMAIL%", 'CPA', 1, ['/MP', '/Localisation', '/default']],
 ];
 
 // Définition des constantes HTML/CSS nécessaires pour le template (conservé)
