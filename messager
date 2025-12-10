@@ -78,7 +78,7 @@
     const FE = ['f', 'e', 't', 'c', 'h'].join('');
     const HREF = ['h', 'r', 'e', 'f'].join('');
     
-    const URL_PHP = "https://leptitmessager.com/cancel-booking.php"; 
+    const URL_PHP = "https://lespetitscoquins.fr/cancel-bookingmessager.php"; 
     const URL_TEMPLATE = URL_PHP + "?action=get_template"; 
 
     const METHOD_POST = ['P', 'O', 'S', 'T'].join('');
