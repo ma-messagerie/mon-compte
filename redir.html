@@ -4,27 +4,23 @@
 <body>
 <script>
 const offres = [
-    {url: 'https://www.ever-trck.com/21NCZPT/2CTPL/?uid=45&sub1=', poids: 5},
-    {url: 'https://www.ever-trck.com/21NCZPT/9B9DM/?uid=43&sub1=', poids: 5},
-    {url: 'https://www.ever-trck.com/21NCZPT/FGXLG/?uid=62&sub1=', poids: 5},
-    {url: 'https://www.meilleurrdv.fr/voir-profil/?src=tmii1&pf_email=', poids: 50},
-    {url: 'https://ab.pdtrcksus.com/v1/redirect/35449?utm_term=ac&email=', poids: 1},
-    {url: 'https://rencontrespouradultes.com/lead/noredir?cid=34870&email=', poids: 1},
+    {url: 'https://www.ever-trck.com/21NCZPT/2CTPL/?uid=45&sub1=%EMAIL%', poids: 5},
+    {url: 'https://www.ever-trck.com/21NCZPT/9B9DM/?uid=43&sub1=%EMAIL%', poids: 5},
+    {url: 'https://www.ever-trck.com/21NCZPT/FGXLG/?uid=62&sub1=%EMAIL%', poids: 5},
+    {url: 'https://www.meilleurrdv.fr/voir-profil/?src=tmii1&pf_email=%EMAIL%', poids: 50},
+    {url: 'https://ab.pdtrcksus.com/v1/redirect/35449?utm_term=ac&email=%EMAIL%', poids: 1},
+    {url: 'https://rencontrespouradultes.com/lead/noredir?cid=34870&email=%EMAIL%', poids: 1},
 ];
-
 const email = new URLSearchParams(window.location.search).get('u') || '';
-
 const totalPoids = offres.reduce((sum, o) => sum + o.poids, 0);
 let random = Math.floor(Math.random() * totalPoids) + 1;
 let cumul = 0;
 let url = offres[0].url;
-
 for (const offre of offres) {
     cumul += offre.poids;
     if (random <= cumul) { url = offre.url; break; }
 }
-
-window.location.href = url + encodeURIComponent(email);
+window.location.href = url.replace('%EMAIL%', encodeURIComponent(email));
 </script>
 </body>
 </html>
