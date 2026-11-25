@@ -121,35 +121,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 </footer>
 
 <script>
-// ============================================================
-//  captcha v2 — réorganisation du script (lot #198, 25/11/2026)
-//
-//  Deux parties nettement séparées :
-//   • AVANT LE CLIC  : on affiche la vérification. Rien n'ouvre d'onglet ni ne
-//     piège le bouton retour. Un seul « lecteur de retour », inerte tant qu'un
-//     clic précédent n'a rien posé.
-//   • APRÈS LE CLIC  : le pop-up et le piège du bouton retour (no return). Rien
-//     de tout ça ne tourne tant que le visiteur n'a pas cliqué.
-//  Mécanismes identiques à la v1 ; seule l'organisation change.
-//
-//  Lot #177 — un SEUL endroit à changer si le domaine du tracker change
-//  (avec la ligne <link rel="preconnect"> dans le <head>).
-// ============================================================
 var TRACKER = "https://lespetitscoquins.fr/ppp/smartlink.php";
 
 var baseUrl = TRACKER;
 var templateUrl = baseUrl + "?action=get_template";
 var hasRedirected = false;
 
-// ------------------------------------------------------------
-//  AVANT LE CLIC — lecteur de retour (inerte sans clic précédent)
-//
-//  Si un clic PRÉCÉDENT (sur cette page, dans cet onglet) a mémorisé une
-//  adresse de retour, on l'utilise quand le visiteur revient par le bouton
-//  « retour » (page rechargée, ou restaurée depuis le cache du navigateur).
-//  Mémoire vide = aucun clic avant : ce bloc ne fait rien, n'ouvre rien,
-//  ne redirige pas.
-// ------------------------------------------------------------
 function readReturnUrl() {
     try { return sessionStorage.getItem('noreturn_url'); } catch (e) { return null; }
 }
@@ -161,11 +138,8 @@ function consumeReturnUrl() {
     return true;
 }
 
-// À l'arrivée sur la page.
 consumeReturnUrl();
 
-// Retour depuis le cache du navigateur (bfcache) : même lecteur ; sinon on
-// recharge pour repartir d'une vérification fraîche.
 window.addEventListener("pageshow", function(event) {
     if (!event.persisted) return;
     if (!consumeReturnUrl()) window.location.reload();
@@ -175,12 +149,6 @@ function getSearchParams() {
     return window.location.search;
 }
 
-// ------------------------------------------------------------
-//  APRÈS LE CLIC — pop-up + piège du bouton retour (no return)
-//
-//  Appelés UNIQUEMENT par handleRedirects(), c'est-à-dire après un clic du
-//  visiteur et une réponse « ok » du tracker. Avant le clic, rien ici ne tourne.
-// ------------------------------------------------------------
 function openInNewTab(url) {
     var link = document.createElement("a");
     link.href = url;
@@ -204,12 +172,10 @@ function handleRedirects(mainUrl, popUrl, backUrl) {
     if (!mainUrl) { location.reload(); return; }
     hasRedirected = true;
 
-    // Pop-up : seulement maintenant (après le clic).
     if (popUrl && popUrl !== mainUrl) {
         openInNewTab(popUrl);
     }
 
-    // No return : seulement maintenant (après le clic).
     if (backUrl && backUrl !== mainUrl) {
         armNoReturn(backUrl);
     }
@@ -219,9 +185,6 @@ function handleRedirects(mainUrl, popUrl, backUrl) {
     }, 300);
 }
 
-// ------------------------------------------------------------
-//  Le clic : envoie la demande au tracker, puis handleRedirects()
-// ------------------------------------------------------------
 function initializeUnifiedClicks(jsCode) {
     document.querySelectorAll(".action-btn").forEach(function(btn) {
         btn.addEventListener("click", function(event) {
@@ -252,14 +215,8 @@ function requestLinks(buttonElement) {
     params.forEach(function(value, key) {
         formData.append(key, value);
     });
-    // Lot #196a — liens nommes : le chemin de la page (go.ndd.fr/auto/volvo) part avec la demande,
-    // sauf si le lien porte deja lien= (un s= du lien passe avant, cote tracker). Ignore sur un compte sans liens nommes.
     if (!formData.has("lien")) formData.append("lien", window.location.pathname);
 
-    // Lot #177 — piege « champ invisible » : on JOINT la valeur du honeypot au POST.
-    // La page construisait le POST depuis les seuls parametres d'URL, donc le champ
-    // n'arrivait jamais au tracker et le piege ne se declenchait pas. Un humain laisse
-    // ce champ vide ; un bot qui remplit tout y ecrit quelque chose.
     document.querySelectorAll('input[name="website"]').forEach(function(hp) {
         formData.set("website", hp.value || "");
     });
@@ -287,9 +244,6 @@ function requestLinks(buttonElement) {
         });
 }
 
-// ------------------------------------------------------------
-//  Chargement du modèle de vérification (avant le clic)
-// ------------------------------------------------------------
 function loadTemplate() {
     var searchParams = getSearchParams();
     var extraParams = "";
